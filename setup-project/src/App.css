@@ -242,6 +242,116 @@ pre code {
   margin-top: 2px;
 }
 
+/* ---------- On-call card ---------- */
+.oncall-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  background: color-mix(in srgb, var(--bg) 92%, var(--accent) 3%);
+  text-align: left;
+}
+
+.oncall-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.oncall-route {
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 6px 10px;
+  background: var(--code-bg);
+  border-radius: 6px;
+  color: var(--text-h);
+}
+
+.oncall-btn {
+  padding: 8px 14px;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+}
+
+.oncall-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.oncall-hint {
+  color: var(--text);
+  font-size: 14px;
+  margin: 0;
+}
+
+.oncall-hint.bad {
+  color: #ef4444;
+}
+
+.oncall-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--mono);
+  font-size: 13.5px;
+}
+
+.oncall-table th,
+.oncall-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.oncall-table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.oncall-table td {
+  color: var(--text-h);
+}
+
+.pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid transparent;
+}
+
+.pill.ok {
+  color: #22c55e;
+  border-color: color-mix(in srgb, #22c55e 40%, transparent);
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+}
+
+.pill.bad {
+  color: #ef4444;
+  border-color: color-mix(in srgb, #ef4444 40%, transparent);
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+}
+
+.oncall-raw {
+  margin-top: 16px;
+}
+
+.oncall-raw summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+  padding: 4px 0;
+}
+
+.oncall-raw pre {
+  margin-top: 8px;
+}
+
 /* ---------- Preview / mock ---------- */
 .mock {
   border: 1px solid var(--border);

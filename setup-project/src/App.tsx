@@ -43,8 +43,29 @@ wrangler logpush create \\
   --destination "r2://telemetry-logs/{DATE}"`,
 }
 
+type Member = { id: number; email: string; name: string; available: number }
+
+type FetchState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'ok'; members: Member[] }
+  | { status: 'error'; message: string }
+
 function App() {
   const [tab, setTab] = useState<TabId>('kusto')
+  const [membersState, setMembersState] = useState<FetchState>({ status: 'idle' })
+
+  const loadMembers = async () => {
+    setMembersState({ status: 'loading' })
+    try {
+      const res = await fetch('/api/members')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = (await res.json()) as { members: Member[] }
+      setMembersState({ status: 'ok', members: data.members })
+    } catch (err) {
+      setMembersState({ status: 'error', message: (err as Error).message })
+    }
+  }
 
   return (
     <>
@@ -55,6 +76,7 @@ function App() {
         </div>
         <nav className="topnav">
           <a href="#setup">Setup</a>
+          <a href="#oncall">On-call</a>
           <a href="#preview">Preview</a>
           <a href={REPO_URL} target="_blank" rel="noreferrer">Repo →</a>
         </nav>
@@ -79,7 +101,7 @@ function App() {
       <section id="setup" className="steps">
         <h2>Setup</h2>
         <p className="section-lede">
-          Four steps from a fresh clone to queryable traces.
+          Five steps from a fresh clone to queryable traces and a live on-call roster.
         </p>
 
         <ol className="step-list">
@@ -142,7 +164,108 @@ npm install`}</code></pre>
               <pre><code>{snippets[tab]}</code></pre>
             </div>
           </li>
+
+          <li>
+            <span className="step-num">5</span>
+            <div>
+              <h3>Provision the on-call D1 database</h3>
+              <p>
+                This deployment ships with an on-call roster stored in
+                Cloudflare D1. Create the database on your account and paste
+                the resulting <code>database_id</code> into
+                <code> wrangler.jsonc</code>.
+              </p>
+              <pre><code>{`# create the DB and copy the printed database_id
+wrangler d1 create oncall-rotation
+
+# create the table
+wrangler d1 execute oncall-rotation --remote --command "\\
+  CREATE TABLE IF NOT EXISTS members ( \\
+    id INTEGER PRIMARY KEY, \\
+    email TEXT NOT NULL, \\
+    name TEXT NOT NULL, \\
+    available INTEGER NOT NULL DEFAULT 1 \\
+  );"
+
+# seed a first member
+wrangler d1 execute oncall-rotation --remote --command "\\
+  INSERT INTO members (email, name, available) \\
+  VALUES ('you@example.com', 'You', 1);"`}</code></pre>
+              <p style={{ marginTop: 12 }}>
+                The Worker exposes <code>GET /api/members</code>, which reads
+                the table via the <code>ONCALL_DB</code> binding.
+              </p>
+            </div>
+          </li>
         </ol>
+      </section>
+
+      <section id="oncall" className="oncall">
+        <h2>On-call roster</h2>
+        <p className="section-lede">
+          Live call against <code>GET /api/members</code> on this deployment —
+          served by the Worker, backed by D1.
+        </p>
+
+        <div className="oncall-card">
+          <div className="oncall-header">
+            <code className="oncall-route">GET /api/members</code>
+            <button
+              className="cta-primary oncall-btn"
+              onClick={loadMembers}
+              disabled={membersState.status === 'loading'}
+            >
+              {membersState.status === 'loading' ? 'Loading…' : 'Fetch members'}
+            </button>
+          </div>
+
+          {membersState.status === 'idle' && (
+            <p className="oncall-hint">Click <em>Fetch members</em> to hit the endpoint.</p>
+          )}
+
+          {membersState.status === 'error' && (
+            <p className="oncall-hint bad">Request failed: {membersState.message}</p>
+          )}
+
+          {membersState.status === 'ok' && (
+            <>
+              {membersState.members.length === 0 ? (
+                <p className="oncall-hint">
+                  The <code>members</code> table is empty. Insert a row and try again.
+                </p>
+              ) : (
+                <table className="oncall-table">
+                  <thead>
+                    <tr>
+                      <th>id</th>
+                      <th>name</th>
+                      <th>email</th>
+                      <th>available</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {membersState.members.map((m) => (
+                      <tr key={m.id}>
+                        <td>{m.id}</td>
+                        <td>{m.name}</td>
+                        <td>{m.email}</td>
+                        <td>
+                          <span className={m.available ? 'pill ok' : 'pill bad'}>
+                            {m.available ? 'available' : 'off'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              <details className="oncall-raw">
+                <summary>Raw response</summary>
+                <pre><code>{JSON.stringify({ members: membersState.members }, null, 2)}</code></pre>
+              </details>
+            </>
+          )}
+        </div>
       </section>
 
       <section id="preview" className="preview">
