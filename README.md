@@ -27,8 +27,26 @@ git clone https://github.com/javidlt/telemetry
 cd telemetry/setup-project
 npm install
 npm run dev        # local dev on http://localhost:5173
-npm run deploy     # build + wrangler deploy
+npm test           # vitest run
+npm run coverage   # vitest + coverage report (HTML in ./coverage)
+npm run deploy     # build + wrangler deploy (dev worker: telemetry)
+npm run deploy:prod # build + wrangler deploy --name telemetry-prod
 ```
+
+## CI / CD
+
+GitHub Actions pipeline at [`.github/workflows/ci.yml`](./.github/workflows/ci.yml):
+
+1. **`build-and-test`** — install, lint, build, run unit tests with coverage,
+   upload `coverage/` (UAT report) and `dist/` as artifacts.
+2. **`deploy-prod`** — on pushes to `main`, download the dist artifact and
+   deploy as a new Cloudflare Worker named `telemetry-prod` using
+   [`cloudflare/wrangler-action`](https://github.com/cloudflare/wrangler-action).
+
+Required repo secrets:
+
+- `CLOUDFLARE_API_TOKEN` — Workers deploy token
+- `CLOUDFLARE_ACCOUNT_ID` — your Cloudflare account id
 
 Observability is enabled by default in
 [`setup-project/wrangler.jsonc`](./setup-project/wrangler.jsonc):
